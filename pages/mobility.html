@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Közlekedés - Százhalombatta Smart City Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Common CSS -->
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="../css/modules/mobility.css">
+</head>
+<body>
+    <div class="app">
+        <!-- SIDEBAR - közös navigáció -->
+        <aside class="sidebar">
+            <!-- TODO: Include sidebar.html tartalmát JavaScript-tel vagy PHP-val -->
+            <div class="sidebar-header">
+                <div class="sidebar-header-title">Százhalombatta</div>
+                <div class="sidebar-header-subtitle">Smart City Dashboard</div>
+            </div>
+            <div class="sidebar-content">
+                <nav class="sidebar-nav">
+                    <a href="../index.html" class="sidebar-nav-item">Áttekintés</a>
+                    <a href="mobility.html" class="sidebar-nav-item active">Közlekedés</a>
+                    <a href="people.html" class="sidebar-nav-item">Közösség</a>
+                    <!-- Többi menüpont... -->
+                </nav>
+            </div>
+        </aside>
+        
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <!-- HEADER -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="header-icon icon-mobility">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 17h14M5 17l2.5-2.5M19 17l-2.5-2.5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="header-title">Közlekedés</h1>
+                        <p class="header-subtitle">Valós idejű forgalmi információk</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="live-indicator">
+                        <span class="pulse-dot"></span>
+                        <span>ÉLŐ</span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- CONTENT AREA -->
+            <div class="content">
+                <div class="mobility-grid grid-6">
+                    <!-- TÉRKÉP - 4 oszlop, 2 sor -->
+                    <div class="tile mobility-map-tile" style="grid-column: span 4; grid-row: span 2;">
+                        <div class="tile-header">
+                            <span>Interaktív Térkép</span>
+                        </div>
+                        <div class="tile-body" style="padding: 0;">
+                            <div id="mobilityMap" style="height: 100%; width: 100%;"></div>
+                        </div>
+                        <div class="tile-footer">
+                            <span>Forrás: TomTom Traffic API</span>
+                            <span id="mapLastUpdate">Most frissítve</span>
+                        </div>
+                    </div>
+                    
+                    <!-- MENETIDŐ - 2 oszlop -->
+                    <div class="tile travel-time-tile" style="grid-column: span 2;">
+                        <div class="tile-header">
+                            <span>Menetidők</span>
+                        </div>
+                        <div class="tile-body" id="travelTimeList">
+                            <!-- Dinamikusan generált menetidők -->
+                            <p>Betöltés...</p>
+                        </div>
+                        <div class="tile-footer">
+                            <span>Forrás: TomTom Routing API</span>
+                            <span id="travelTimeLastUpdate">-</span>
+                        </div>
+                    </div>
+                    
+                    <!-- FORGALMI TERHELÉS - 2 oszlop -->
+                    <div class="tile" style="grid-column: span 2;">
+                        <div class="tile-header">
+                            <span>Forgalmi Terhelés</span>
+                        </div>
+                        <div class="tile-body">
+                            <canvas id="trafficFlowChart"></canvas>
+                        </div>
+                        <div class="tile-footer">
+                            <span>Forrás: TomTom Traffic Flow</span>
+                        </div>
+                    </div>
+                    
+                    <!-- KÖZLEKEDÉSI HÍREK - 2 oszlop -->
+                    <div class="tile" style="grid-column: span 2;">
+                        <div class="tile-header">
+                            <span>Közlekedési Hírek</span>
+                        </div>
+                        <div class="tile-body" id="trafficNews">
+                            <p>Nincs aktív hír</p>
+                        </div>
+                        <div class="tile-footer">
+                            <span>Helyi önkormányzat</span>
+                        </div>
+                    </div>
+                    
+                    <!-- ÚTINFORMÁCIÓK - 2 oszlop -->
+                    <div class="tile" style="grid-column: span 2;">
+                        <div class="tile-header">
+                            <span>Útinformációk</span>
+                        </div>
+                        <div class="tile-body" id="utinform">
+                            <p>Betöltés...</p>
+                        </div>
+                        <div class="tile-footer">
+                            <span>Forrás: Útinform API</span>
+                        </div>
+                    </div>
+                    
+                    <!-- GYALOGÁTKELŐK - 2 oszlop -->
+                    <div class="tile" style="grid-column: span 2;">
+                        <div class="tile-header">
+                            <span>Intelligens Gyalogátkelők</span>
+                        </div>
+                        <div class="tile-body">
+                            <select id="crosswalkSelect" class="select">
+                                <option>Főút - Petőfi utca</option>
+                                <!-- 22 gyalogátkelő... -->
+                            </select>
+                            <div id="crosswalkStats">
+                                <canvas id="crosswalkChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="tile-footer">
+                            <span>22 átkelőhely monitorozva</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Common JS -->
+    <script src="../js/api-config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/navigation.js"></script>
+    
+    <!-- Page-specific JS -->
+    <script src="../js/modules/mobility.js"></script>
+    
+    <script>
+        // Initialize mobility module
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mobility modul inicializálása
+            console.log('Mobility page loaded');
+            // TODO: initMobility() hívás
+        });
+    </script>
+</body>
+</html>
