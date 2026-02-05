@@ -1,0 +1,52 @@
+{
+  "name": "szazhalombatta-dashboard",
+  "version": "20.0.0",
+  "description": "Százhalombatta Smart City Dashboard - Átfogó okosváros információs rendszer",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,html --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"**/*.{js,css,html,md}\"",
+    "format:check": "prettier --check \"**/*.{js,css,html,md}\"",
+    "clean": "rm -rf dist node_modules",
+    "deploy": "npm run build && gh-pages -d dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bojtiferenc/Projekt-Dashboard.git"
+  },
+  "keywords": [
+    "smart-city",
+    "dashboard",
+    "tomtom",
+    "openweathermap",
+    "google-maps",
+    "százhalombatta",
+    "municipality"
+  ],
+  "author": "Ferenc Bojti",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "gh-pages": "^6.1.0",
+    "prettier": "^3.2.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "leaflet": "^1.9.4"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
