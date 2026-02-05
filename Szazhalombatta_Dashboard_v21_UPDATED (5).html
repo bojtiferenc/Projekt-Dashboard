@@ -5642,7 +5642,7 @@
                                     <div class="quick-link-score">78 pont</div>
                                 </div>
                             </a>
-                            <a href="#" class="quick-link" data-page="people">
+                            <a href="#" class="quick-link" data-page="about">
                                 <div class="quick-link-icon people">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -5696,7 +5696,7 @@
                                     <div class="quick-link-score">82 pont</div>
                                 </div>
                             </a>
-                            <a href="#" class="quick-link" data-page="living">
+                            <a href="#" class="quick-link" data-page="services">
                                 <div class="quick-link-icon living">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -6482,7 +6482,7 @@
                             </div>
                         </div>
                     </div>
-                    <button id="weather-debug-toggle" onclick="toggleWeatherDebug()" style="position: fixed; bottom: 20px; right: 20px; background: #fbbf24; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 16px; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,0.3);" title="Teszt panel">🔧</button>
+                    <button id="weather-debug-toggle" onclick="toggleWeatherDebug()" style="display: none; position: fixed; bottom: 20px; right: 20px; background: #fbbf24; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 16px; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,0.3);" title="Teszt panel">🔧</button>
                     
                     <!-- Térkép és Menetidő egymás mellett -->
                     <div class="mobility-layout">
@@ -7966,7 +7966,6 @@
         // ============================================
         let mobilityMap;
         let mobilityTrafficLayer;
-        let mobilityInfoWindow;
         let mobilityCurrentLocation = { lat: 47.3175, lng: 18.9145 }; // Százhalombatta
         const MOBILITY_SEARCH_RADIUS = 3000; // 3 km - város határain belül
         let mobilityMapInitialized = false;
@@ -8073,8 +8072,15 @@
         };
         
         function createMobilityMarkerIcon(layerKey) {
-            // TEMP: Kikapcsolva (Leaflet migration)
-            return null;
+            const iconData = mobilityMarkerIcons[layerKey];
+            if (!iconData) return null;
+            return L.divIcon({
+                className: 'mobility-marker-icon',
+                html: `<div style="background:${iconData.color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.8);box-shadow:0 2px 6px rgba(0,0,0,0.4);"><svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="${iconData.path}"/></svg></div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -14]
+            });
         }
         
         // OpenStreetMap Overpass API
@@ -8554,8 +8560,8 @@
             // Debug log a trendekhez
             if (lastWeatherData) {
                 console.log('📈 Trend adatok:', {
-                    'Előző hőm.': lastWeatherData.temp, 'Most': temp, 'Trend': tempTrend,
-                    'Előző csap.': lastWeatherData.precip, 'Most': precip
+                    'Előző hőm.': lastWeatherData.temp, 'Hőm. most': temp, 'Trend': tempTrend,
+                    'Előző csap.': lastWeatherData.precip, 'Csap. most': precip
                 });
             }
             
@@ -8986,17 +8992,49 @@
         }
         
         function createMobilityMarkers() {
-            // TEMP: Marker layer rendszer kikapcsolva (Leaflet migration)
-            console.warn('Mobility markers átmenetileg kikapcsolva');
+            if (!mobilityMap) return;
+            Object.keys(mobilityLayers).forEach(layerKey => {
+                const layer = mobilityLayers[layerKey];
+                // Clear existing markers
+                if (layer.markers) {
+                    layer.markers.forEach(m => mobilityMap.removeLayer(m));
+                }
+                layer.markers = [];
+                const icon = createMobilityMarkerIcon(layerKey);
+                if (!icon || !layer.data) return;
+                layer.data.forEach(item => {
+                    if (!item.lat || !item.lng) return;
+                    const marker = L.marker([item.lat, item.lng], { icon: icon })
+                        .bindPopup(`<div style="color:#1a1a2e;"><strong>${item.name || ''}</strong><br>${item.info || ''}<br><small>${item.details || ''}</small></div>`);
+                    layer.markers.push(marker);
+                });
+            });
+            updateMobilityLayerVisibility();
         }
         
         function toggleMobilityLayer(layerKey) {
-            // TEMP: Layer toggle kikapcsolva
-            console.warn('Layer toggle átmenetileg kikapcsolva');
+            const layer = mobilityLayers[layerKey];
+            if (!layer) return;
+            layer.enabled = !layer.enabled;
+            // Toggle button active state
+            const btn = document.querySelector(`.mobility-layer-btn[data-layer="${layerKey}"]`);
+            if (btn) btn.classList.toggle('active', layer.enabled);
+            updateMobilityLayerVisibility();
         }
         
         function updateMobilityLayerVisibility() {
-            // TEMP: Layer visibility kikapcsolva
+            if (!mobilityMap) return;
+            Object.keys(mobilityLayers).forEach(layerKey => {
+                const layer = mobilityLayers[layerKey];
+                if (!layer.markers) return;
+                layer.markers.forEach(marker => {
+                    if (layer.enabled) {
+                        if (!mobilityMap.hasLayer(marker)) marker.addTo(mobilityMap);
+                    } else {
+                        if (mobilityMap.hasLayer(marker)) mobilityMap.removeLayer(marker);
+                    }
+                });
+            });
         }
         
         let mobilityUserMarker;
@@ -9027,7 +9065,7 @@
             const savedPosition = mobilityCurrentLocation || userPositionForTravel;
             
             if (savedPosition) {
-                mobilityMap.setCenter(savedPosition);
+                mobilityMap.panTo([savedPosition.lat, savedPosition.lng]);
                 mobilityMap.setZoom(15);
                 addMobilityUserMarker(savedPosition);
                 updateMobilityLocationStatus('Saját hely');
@@ -9035,7 +9073,7 @@
             } else {
                 // Nincs tárolt pozíció - Százhalombattára ugrunk
                 const defaultPos = { lat: 47.3175, lng: 18.9145 };
-                mobilityMap.setCenter(defaultPos);
+                mobilityMap.panTo([defaultPos.lat, defaultPos.lng]);
                 mobilityMap.setZoom(14);
                 updateMobilityLocationStatus('Százhalombatta');
                 console.log('Nincs tárolt pozíció, alapértelmezett használata');
@@ -9059,12 +9097,8 @@
         }
         
         function refreshMobilityMap() {
-            // Újratölti az összes aktív réteget
-            Object.keys(mobilityLayers).forEach(layerKey => {
-                if (mobilityLayers[layerKey].visible && mobilityLayers[layerKey].loadData) {
-                    mobilityLayers[layerKey].loadData();
-                }
-            });
+            // Újratölti az összes adatot és markereket
+            loadMobilityData();
             updateMobilityTimestamp();
         }
         
@@ -9621,9 +9655,9 @@
                     const durationMin = Math.round(data.travelTimeInSeconds / 60);
                     const distanceKm = (data.lengthInMeters / 1000).toFixed(1);
                     return {
-                        duration: `${durationMin} perc`,
+                        duration: durationMin,
                         durationSeconds: data.travelTimeInSeconds,
-                        distance: `${distanceKm} km`,
+                        distance: distanceKm,
                         trafficDelay: data.trafficDelayInSeconds || 0
                     };
                 } else {
@@ -9734,7 +9768,7 @@
                     : 'stabil';
                 
                 // Távolság megjelenítése ha van
-                const distanceText = dest.distance ? `${dest.distance} km távolság` : dest.address;
+                const distanceText = dest.distance ? `${dest.distance} km` : dest.address;
                 
                 html += `
                     <div class="destination-card" onclick="showRouteOnMap(${dest.lat}, ${dest.lng}, '${dest.name}')">
@@ -9789,18 +9823,13 @@
         
         function showRouteOnMap(lat, lng, name) {
             if (mobilityMap) {
-                mobilityMap.setCenter({ lat, lng });
+                mobilityMap.panTo([lat, lng]);
                 mobilityMap.setZoom(14);
-                
-                if (mobilityInfoWindow) {
-                    mobilityInfoWindow.setContent(`
-                        <div style="padding: 8px; color: #1a1a2e;">
-                            <strong>${name}</strong>
-                        </div>
-                    `);
-                    mobilityInfoWindow.setPosition({ lat, lng });
-                    mobilityInfoWindow.open(mobilityMap);
-                }
+
+                L.popup()
+                    .setLatLng([lat, lng])
+                    .setContent(`<div style="padding: 8px; color: #1a1a2e;"><strong>${name}</strong></div>`)
+                    .openOn(mobilityMap);
             }
         }
         
@@ -9902,7 +9931,9 @@
                 address: address,
                 lat: parseFloat(lat.toFixed(4)),
                 lng: parseFloat(lng.toFixed(4)),
-                time: Math.floor(Math.random() * 30) + 10,
+                time: null,
+                durationSeconds: null,
+                distance: null,
                 trend: 'stable',
                 change: 0
             };
@@ -10132,18 +10163,13 @@
         
         function focusNewsOnMap(lat, lng, title) {
             if (mobilityMap) {
-                mobilityMap.setCenter({ lat, lng });
+                mobilityMap.panTo([lat, lng]);
                 mobilityMap.setZoom(16);
-                
-                if (mobilityInfoWindow) {
-                    mobilityInfoWindow.setContent(`
-                        <div style="padding: 8px; color: #1a1a2e;">
-                            <strong>${title}</strong>
-                        </div>
-                    `);
-                    mobilityInfoWindow.setPosition({ lat, lng });
-                    mobilityInfoWindow.open(mobilityMap);
-                }
+
+                L.popup()
+                    .setLatLng([lat, lng])
+                    .setContent(`<div style="padding: 8px; color: #1a1a2e;"><strong>${title}</strong></div>`)
+                    .openOn(mobilityMap);
             }
         }
         
@@ -10747,38 +10773,6 @@
     </script>
     
     <!-- Leaflet már be van töltve a head-ben, nincs szükség Google Maps-re -->
-    <script>
-        // Leaflet alapú mobility map inicializálás
-        let mobilityMap = null;
-        
-        function initMobilityMapCallback() {
-            // Leaflet használata Google Maps helyett
-            console.log('Mobility map ready (Leaflet)');
-        }
-        
-        function initMobilityMap() {
-            if (mobilityMap) return;
-            
-            const mapContainer = document.getElementById('map');
-            if (!mapContainer) return;
-            
-            // Leaflet térkép inicializálás
-            mobilityMap = L.map('map').setView([47.2831, 18.9217], 14);
-            
-            // OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19
-            }).addTo(mobilityMap);
-            
-            // Marker Százhalombattára
-            L.marker([47.2831, 18.9217])
-                .addTo(mobilityMap)
-                .bindPopup('Százhalombatta');
-            
-            console.log('✅ Mobility map initialized with Leaflet');
-        }
-    </script>
     
     <!-- Úticél szerkesztő modal -->
     <div class="travel-editor-modal" id="travel-editor-modal">
