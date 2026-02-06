@@ -7616,10 +7616,17 @@
                 { lat: 47.3175, lng: 18.9239, name: 'Strand parkoló', info: '200 férőhely, Ingyenes', details: 'Vasút utca 41., Sportcsarnok mellett' },
                 { lat: 47.3182, lng: 18.9095, name: 'Halom Üzletház parkoló', info: 'Ingyenes', details: 'Szent István tér 10.' },
                 { lat: 47.3145, lng: 18.9050, name: 'Piac tér parkoló', info: 'Ingyenes', details: 'Piac tér, SPAR Partner mellett' },
-                { lat: 47.3141, lng: 18.9101, name: 'Erkel Ferenc körút parkoló', info: 'Ingyenes', details: 'Erkel Ferenc körút' },
+                { lat: 47.3141, lng: 18.9101, name: 'Erkel Ferenc körút parkoló (dél)', info: 'Ingyenes', details: 'Erkel Ferenc körút 79-80.' },
+                { lat: 47.3165, lng: 18.9041, name: 'Erkel Ferenc körút parkoló (észak)', info: 'Ingyenes', details: 'Erkel Ferenc körút' },
                 { lat: 47.3232, lng: 18.9023, name: 'SZISZKI parkoló', info: 'Ingyenes, 0-24', details: 'Iskola utca 3.' },
                 { lat: 47.3139, lng: 18.9143, name: 'CBA Príma parkoló', info: 'Ingyenes', details: 'Damjanich utca 23.' },
-                { lat: 47.3358, lng: 18.9392, name: 'Régészeti Park parkoló', info: 'Ingyenes', details: 'Poroszlai Ildikó út 1-2.' }
+                { lat: 47.3358, lng: 18.9392, name: 'Régészeti Park parkoló', info: 'Ingyenes', details: 'Poroszlai Ildikó út 1-2.' },
+                { lat: 47.3216, lng: 18.9098, name: 'Egészségügyi Központ parkoló', info: 'Ingyenes', details: 'Gesztenyés út 10.' },
+                { lat: 47.3135, lng: 18.9055, name: 'Kodály Zoltán sétány parkoló', info: 'Ingyenes', details: 'Kodály Zoltán sétány 14-16.' },
+                { lat: 47.3130, lng: 18.9090, name: 'Liszt Ferenc sétány parkoló', info: 'Ingyenes', details: 'Liszt Ferenc sétány 31-35.' },
+                { lat: 47.3154, lng: 18.9075, name: 'Uszoda parkoló', info: 'Ingyenes', details: 'Bolyai János u., Szalai János Uszoda' },
+                { lat: 47.3140, lng: 18.9070, name: 'Móricz Zsigmond köz parkoló', info: 'Ingyenes', details: 'Móricz Zsigmond köz' },
+                { lat: 47.3200, lng: 18.9160, name: 'Wake Up! Fitness parkoló', info: 'Ingyenes', details: 'Dunafüredi út 5.' }
             ],
             bike: [
                 { lat: 47.3180, lng: 18.9140, name: 'Városháza kerékpártároló', info: 'Fedett', details: '20 férőhely' },
@@ -8535,7 +8542,7 @@
             updateMobilityCount('bus', mobilityLayers.bus.data.length);
             console.log(`bus: GTFS adatok használata (${mobilityLayers.bus.data.length} megálló)`);
             
-            // Parkolók: mindig a saját adatok (11 parkoló)
+            // Parkolók: mindig a saját adatok (18 parkoló)
             mobilityLayers.parking.data = mobilityFallbackData.parking || [];
             mobilityLayers.parking.source = 'local';
             updateMobilityCount('parking', mobilityLayers.parking.data.length);
