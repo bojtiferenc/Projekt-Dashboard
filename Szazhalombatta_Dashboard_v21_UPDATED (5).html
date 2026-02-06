@@ -8447,24 +8447,25 @@
 
         
         // Globális függvény az onclick-hez
+        const OPENWEATHER_WORKER_URL = 'https://openweather.bojtiferenc.workers.dev';
+
         window.loadWeatherData = async function() {
             const lat = 47.3175;
             const lng = 18.9145;
-            const apiKey = 'd21fdb43be56eaaad5aacecdc183a2c4';
-            
+
             debugLog('🌐 API lekérdezés indítása...', 'info');
-            
+
             // Loading animáció mindkét gombra
             document.querySelectorAll('.weather-refresh-btn').forEach(btn => btn.classList.add('spinning'));
-            
+
             try {
-                // Aktuális időjárás
-                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric&lang=hu`;
+                // Aktuális időjárás (Cloudflare Worker proxy-n keresztül)
+                const currentUrl = `${OPENWEATHER_WORKER_URL}?type=current&lat=${lat}&lon=${lng}`;
                 const currentResponse = await fetch(currentUrl);
                 const currentData = await currentResponse.json();
-                
+
                 // Előrejelzés (következő 6 óra = 2 időszak, 3 órás felbontás)
-                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric&lang=hu&cnt=3`;
+                const forecastUrl = `${OPENWEATHER_WORKER_URL}?type=forecast&lat=${lat}&lon=${lng}&cnt=3`;
                 const forecastResponse = await fetch(forecastUrl);
                 const forecastData = await forecastResponse.json();
                 
@@ -9112,7 +9113,7 @@
         // ==========================================
         // TOMTOM TRAFFIC FLOW API
         // ==========================================
-        const TOMTOM_API_KEY = 'QTcEORGcMNkPX0ZoNh6QnjwsBaht5G2z';
+        // API kulcsok a Cloudflare Worker proxy-kban vannak tárolva (nem a kliensben)
         const TOMTOM_WORKER_URL = 'https://tomtom.bojtiferenc.workers.dev';
         
         // Százhalombatta környéki utak koordinátái
@@ -9159,27 +9160,66 @@
         
         // TomTom API lekérdezés egy útra
         async function fetchTrafficForRoad(roadId, direction) {
-            // TEMP: TomTom Traffic Worker átmenetileg kikapcsolva (API hiba)
-            console.warn('TomTom Traffic Worker kikapcsolva');
-            return null;
+            const road = TRAFFIC_ROADS[roadId];
+            const coords = road[direction];
+
+            try {
+                const response = await fetch(
+                    `${TOMTOM_WORKER_URL}?lat=${coords.lat}&lon=${coords.lon}`
+                );
+
+                if (!response.ok) throw new Error('API hiba');
+
+                const data = await response.json();
+
+                if (data.flowSegmentData) {
+                    const flow = data.flowSegmentData;
+                    return {
+                        roadId,
+                        currentSpeed: flow.currentSpeed,
+                        freeFlowSpeed: flow.freeFlowSpeed,
+                        congestion: Math.round((1 - flow.currentSpeed / flow.freeFlowSpeed) * 100),
+                        confidence: flow.confidence,
+                        roadClosure: flow.roadClosure || false,
+                        timestamp: new Date()
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error(`Traffic fetch error for ${roadId}:`, error);
+                return null;
+            }
         }
-        
+
         // Összes út lekérdezése
         async function fetchAllTrafficData() {
-            // TEMP: TomTom Traffic Worker kikapcsolva (API hiba)
-            console.warn('Forgalmi adatok betöltése átmenetileg kikapcsolva');
-            
-            // Placeholder adatok megjelenítése
-            Object.keys(TRAFFIC_ROADS).forEach(roadId => {
-                const congestionEl = document.getElementById(`congestion-${roadId}`);
-                const speedEl = document.getElementById(`speed-${roadId}`);
-                
-                if (congestionEl) congestionEl.textContent = '--';
-                if (speedEl) speedEl.textContent = '-- km/h';
+            const direction = currentTrafficDirection;
+            const results = {};
+
+            for (const roadId of Object.keys(TRAFFIC_ROADS)) {
+                const data = await fetchTrafficForRoad(roadId, direction);
+                if (data) {
+                    results[roadId] = data;
+                    updateTrafficCard(roadId, data);
+                }
+            }
+
+            // Historikus adathoz hozzáadás
+            const timestamp = new Date();
+            trafficHistory.push({
+                timestamp,
+                direction,
+                data: results
             });
-            
+
+            // Csak az utolsó 24 órát tartjuk
+            const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            trafficHistory = trafficHistory.filter(h => h.timestamp > dayAgo);
+
+            updateTrafficChart();
             updateTrafficTimestamp();
-            return {};
+
+            return results;
         }
         
         // Kártya frissítése
