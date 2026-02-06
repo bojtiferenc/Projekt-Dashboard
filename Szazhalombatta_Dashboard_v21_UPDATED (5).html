@@ -9305,25 +9305,149 @@
         
         // TomTom Routing API hívás (Cloudflare Worker-en keresztül)
         const TOMTOM_ROUTING_URL = 'https://tomtom-routes.bojtiferenc.workers.dev';
-        
-        async function fetchTravelTime(fromLat, fromLng, toLat, toLng, mode) {
+
+        // VOLÁN GTFS menetrend alapú transit menetidő számítás
+        function calculateVolanTransitTime(fromLat, fromLng, destName) {
+            if (typeof VOLAN === 'undefined') return null;
+
+            // Irány szűrés az úticél alapján
+            const destLower = destName.toLowerCase();
+            let directionFilter;
+            if (destLower.includes('budapest')) {
+                directionFilter = e => e.direction.includes('Budapest felé') ||
+                    (e.direction.includes('Budapest') && e.direction.includes('Diósd'));
+            } else if (destLower.includes('érd') || destLower === 'erd') {
+                directionFilter = e => e.direction.includes('Érd felé') ||
+                    e.direction.includes('Budapest felé') ||
+                    (e.direction.includes('Érd') && e.direction.includes('Diósd'));
+            } else if (destLower.includes('dunaújváros') || destLower.includes('dunaujvaros')) {
+                directionFilter = e => e.direction.includes('Dunaújváros');
+            } else {
+                return null;
+            }
+
+            // Szolgálati nap szűrés
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+            const isSaturday = dayOfWeek === 6;
+            const isSunday = dayOfWeek === 0;
+
+            function serviceMatchesToday(service) {
+                if (service === '*') return true;
+                if (service === 'M' && isWeekday) return true;
+                if (service === 'MS' && (isSaturday || isSunday)) return true;
+                if (service === 'SZ' && isSaturday) return true;
+                if (service === 'V' && isSunday) return true;
+                if (service === 'I' && isWeekday) return true;
+                return false;
+            }
+
+            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+            // Megállók távolság szerint rendezve
+            const stopsByDist = VOLAN.stops
+                .map(stop => {
+                    const dlat = stop.lat - fromLat;
+                    const dlon = stop.lon - fromLng;
+                    return { ...stop, dist: Math.sqrt(dlat * dlat + dlon * dlon) };
+                })
+                .sort((a, b) => a.dist - b.dist);
+
+            // Legközelebbi megálló keresése amelyiknek VAN járata a kívánt irányba
+            let bestStop = null;
+            let bestDepartures = null;
+
+            for (const stop of stopsByDist) {
+                const schedule = VOLAN.schedule[stop.id];
+                if (!schedule || schedule.length === 0) continue;
+
+                const departures = schedule
+                    .filter(e => directionFilter(e) && serviceMatchesToday(e.service))
+                    .map(e => {
+                        const [h, m] = e.time.split(':').map(Number);
+                        return { ...e, minutes: h * 60 + m };
+                    })
+                    .sort((a, b) => a.minutes - b.minutes);
+
+                if (departures.length > 0) {
+                    bestStop = stop;
+                    bestDepartures = departures;
+                    break;
+                }
+            }
+
+            if (!bestStop || !bestDepartures) return null;
+
+            // Következő indulás keresése
+            let nextDep = bestDepartures.find(d => d.minutes > nowMinutes);
+            if (!nextDep) nextDep = bestDepartures[0];
+
+            // Várakozási idő (percben)
+            let waitMinutes;
+            if (nextDep.minutes > nowMinutes) {
+                waitMinutes = nextDep.minutes - nowMinutes;
+            } else {
+                waitMinutes = (24 * 60 - nowMinutes) + nextDep.minutes;
+            }
+
+            // Gyaloglás a megállóig (~5 km/h sebesség)
+            const walkDistKm = bestStop.dist * 111;
+            const walkMinutes = Math.round(walkDistKm / 5 * 60);
+
+            // Becsült buszmenetidő az úticél alapján (perc)
+            const busTravelTimes = {
+                'budapest': 55,
+                'érd': 25,
+                'dunaújváros': 50
+            };
+            let busTravelMin = 45;
+            for (const [key, val] of Object.entries(busTravelTimes)) {
+                if (destLower.includes(key)) { busTravelMin = val; break; }
+            }
+
+            const totalMinutes = walkMinutes + waitMinutes + busTravelMin;
+            const totalSeconds = totalMinutes * 60;
+
+            return {
+                duration: totalMinutes,
+                durationSeconds: totalSeconds,
+                distance: null,
+                trafficDelay: 0,
+                transitInfo: {
+                    stopName: bestStop.name,
+                    departureTime: nextDep.time,
+                    route: nextDep.route,
+                    headsign: nextDep.headsign,
+                    waitMinutes: waitMinutes,
+                    busTravelMin: busTravelMin
+                }
+            };
+        }
+
+        async function fetchTravelTime(fromLat, fromLng, toLat, toLng, mode, destName) {
+            // Transit mód: VOLÁN GTFS menetrend alapú számítás
+            if (mode === 'transit') {
+                const transitResult = calculateVolanTransitTime(fromLat, fromLng, destName);
+                if (transitResult) return transitResult;
+                // Fallback: ha nincs GTFS adat, TomTom car × 1.4
+            }
+
             try {
-                // TomTom mode mapping
                 const modeMap = {
                     'driving': 'car',
-                    'transit': 'car', // TomTom nem támogat tömegközlekedést, autó alapú becslés
+                    'transit': 'car',
                     'bicycling': 'bicycle',
                     'walking': 'pedestrian'
                 };
-                // Transit módnál 1.4x szorzó (megállók, várakozás)
                 const transitMultiplier = (mode === 'transit') ? 1.4 : 1;
-                
+
                 const tomtomMode = modeMap[mode] || 'car';
                 const url = `${TOMTOM_ROUTING_URL}?start=${fromLat},${fromLng}&end=${toLat},${toLng}&mode=${tomtomMode}`;
-                
+
                 const response = await fetch(url);
                 const data = await response.json();
-                
+
                 if (data.travelTimeInSeconds) {
                     const adjustedSeconds = Math.round(data.travelTimeInSeconds * transitMultiplier);
                     const durationMin = Math.round(adjustedSeconds / 60);
@@ -9376,7 +9500,8 @@
                         userPositionForTravel.lng,
                         dest.lat,
                         dest.lng,
-                        currentTransportMode
+                        currentTransportMode,
+                        dest.name
                     );
                     
                     if (result) {
@@ -9384,6 +9509,7 @@
                         dest.time = result.duration;
                         dest.durationSeconds = result.durationSeconds;
                         dest.distance = result.distance;
+                        dest.transitInfo = result.transitInfo || null;
                         successCount++;
                         
                         // Trend a másodpercek alapján (legalább 30 mp változás számít)
@@ -9441,15 +9567,20 @@
                     ? `-${dest.change} perc`
                     : 'stabil';
                 
-                // Távolság megjelenítése ha van
-                const distanceText = dest.distance ? `${dest.distance} km` : dest.address;
-                
+                // Távolság vagy busz info megjelenítése
+                let subtitleText;
+                if (dest.transitInfo) {
+                    subtitleText = `<span style="color:#60a5fa">🚌 ${dest.transitInfo.route}</span> indul: ${dest.transitInfo.departureTime} · ${dest.transitInfo.stopName} · várakozás: ${dest.transitInfo.waitMinutes} perc`;
+                } else {
+                    subtitleText = dest.distance ? `${dest.distance} km` : dest.address;
+                }
+
                 const safeName = (dest.name || '').replace(/'/g, "\\'").replace(/</g, '&lt;');
                 html += `
                     <div class="destination-card" onclick="showRouteOnMap(${dest.lat}, ${dest.lng}, '${safeName}')">
                         <div class="destination-info">
                             <div class="destination-name">${dest.name}</div>
-                            <div class="destination-address">${distanceText}</div>
+                            <div class="destination-address">${subtitleText}</div>
                         </div>
                         <div class="destination-time">
                             <div class="time-value">${dest.time || '--'}<span class="time-unit">perc</span></div>
