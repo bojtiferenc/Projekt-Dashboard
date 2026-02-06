@@ -2801,7 +2801,7 @@
         }
         
         .weather-refresh-btn.spinning svg {
-            animation: spinIcon 0.8s linear infinite;
+            animation: spinIcon 0.6s linear 1;
         }
         
         @keyframes spinIcon {
@@ -4678,7 +4678,7 @@
         
         .refresh-btn.spinning svg,
         .footer-icon-btn.spinning svg {
-            animation: spinIcon 0.8s linear infinite;
+            animation: spinIcon 0.6s linear 1;
         }
         
         /* Úticél szerkesztő modal */
@@ -5623,6 +5623,16 @@
                             <div class="source-dot"></div>
                             <span>Élő adatok • OpenWeatherMap</span>
                         </div>
+                        <div class="tile-footer-right">
+                            <span id="pinned-weather-footer-ts" style="font-size: 11px; color: var(--text-muted);">--:--</span>
+                            <button class="footer-icon-btn weather-refresh-btn" onclick="window.loadWeatherData()" title="Frissítés">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6"/>
+                                    <path d="M1 20v-6h6"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="pin-icon pinned" data-mosaic="weather-tile" data-tooltip="Kitűzés eltávolítása">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -6527,6 +6537,16 @@
                                 <div class="source-dot"></div>
                                 <span>Élő adatok • OpenWeatherMap</span>
                             </div>
+                            <div class="tile-footer-right">
+                                <span id="weather-footer-ts" style="font-size: 11px; color: var(--text-muted);">--:--</span>
+                                <button class="footer-icon-btn weather-refresh-btn" onclick="window.loadWeatherData()" title="Frissítés">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 4v6h-6"/>
+                                        <path d="M1 20v-6h6"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="pin-icon" data-mosaic="weather-tile" data-tooltip="Kitűzés az áttekintésbe">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -6891,6 +6911,13 @@
                             </div>
                             <div class="tile-footer-right">
                                 <span id="traffic-timestamp" style="font-size: 11px; color: var(--text-muted);">--:--</span>
+                                <button class="footer-icon-btn" onclick="refreshTrafficFlow()" title="Frissítés">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 4v6h-6"/>
+                                        <path d="M1 20v-6h6"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -7151,7 +7178,17 @@
                                         <div class="source-dot"></div>
                                         <span>MÁV-START GTFS</span>
                                     </div>
-                                    <a href="https://jegy.mav.hu" target="_blank">jegy.mav.hu</a>
+                                    <div class="tile-footer-right">
+                                        <a href="https://jegy.mav.hu" target="_blank">jegy.mav.hu</a>
+                                        <span id="mav-footer-ts" style="font-size: 11px; color: var(--text-muted);">--:--</span>
+                                        <button class="footer-icon-btn" onclick="refreshMav()" title="Frissítés">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M23 4v6h-6"/>
+                                                <path d="M1 20v-6h6"/>
+                                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="transit-tile" id="volan-tile">
@@ -7208,7 +7245,17 @@
                                         <div class="source-dot"></div>
                                         <span>Volánbusz GTFS</span>
                                     </div>
-                                    <a href="https://menetrendek.hu" target="_blank">menetrendek.hu</a>
+                                    <div class="tile-footer-right">
+                                        <a href="https://menetrendek.hu" target="_blank">menetrendek.hu</a>
+                                        <span id="volan-footer-ts" style="font-size: 11px; color: var(--text-muted);">--:--</span>
+                                        <button class="footer-icon-btn" onclick="refreshVolan()" title="Frissítés">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M23 4v6h-6"/>
+                                                <path d="M1 20v-6h6"/>
+                                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -8397,7 +8444,8 @@
             if (mainEl('weather-pressure')) mainEl('weather-pressure').innerHTML = ui.pressure || '-- hPa';
             if (mainEl('weather-humidity')) mainEl('weather-humidity').innerHTML = ui.humidity || '--%';
             if (mainEl('weather-updated')) mainEl('weather-updated').textContent = ui.updated || '--:--';
-            
+            if (mainEl('weather-footer-ts')) mainEl('weather-footer-ts').textContent = ui.updated || '--:--';
+
             // Kitűzött csempe (áttekintés oldal) visszaállítása
             if (mainEl('pinned-weather-temp')) mainEl('pinned-weather-temp').innerHTML = ui.temp || '--°C';
             if (mainEl('pinned-weather-icon')) mainEl('pinned-weather-icon').textContent = ui.icon || '🌡️';
@@ -8407,7 +8455,8 @@
             if (mainEl('pinned-weather-pressure')) mainEl('pinned-weather-pressure').innerHTML = ui.pressure || '-- hPa';
             if (mainEl('pinned-weather-humidity')) mainEl('pinned-weather-humidity').innerHTML = ui.humidity || '--%';
             if (mainEl('pinned-weather-updated')) mainEl('pinned-weather-updated').textContent = ui.updated || '--:--';
-            
+            if (mainEl('pinned-weather-footer-ts')) mainEl('pinned-weather-footer-ts').textContent = ui.updated || '--:--';
+
             console.log('🔄 Időjárás UI visszaállítva localStorage-ból');
             debugLog('✅ UI visszaállítva localStorage-ból', 'success');
             return true;
@@ -8712,6 +8761,7 @@
                 void mainEl('weather-updated').offsetWidth; // Reflow trigger
                 mainEl('weather-updated').classList.add('refresh-flash');
             }
+            if (mainEl('weather-footer-ts')) mainEl('weather-footer-ts').textContent = timeStr;
             
             // Kitűzött csempe (áttekintés oldal) frissítése
             if (mainEl('pinned-weather-temp')) mainEl('pinned-weather-temp').innerHTML = `${temp}°C${tempTrend}`;
@@ -8728,6 +8778,7 @@
                 void mainEl('pinned-weather-updated').offsetWidth;
                 mainEl('pinned-weather-updated').classList.add('refresh-flash');
             }
+            if (mainEl('pinned-weather-footer-ts')) mainEl('pinned-weather-footer-ts').textContent = timeStr;
             
             // Közlekedési figyelmeztetés (aktuális + előrejelzés alapján)
             updateWeatherAlert(temp, wind, precip, weatherId, forecastData);
@@ -9407,6 +9458,13 @@
             }
         }
         
+        async function refreshTrafficFlow() {
+            const btn = document.querySelector('.traffic-flow-footer .footer-icon-btn');
+            if (btn) btn.classList.add('spinning');
+            await fetchAllTrafficData();
+            if (btn) setTimeout(() => btn.classList.remove('spinning'), 600);
+        }
+
         // Irányváltás
         function setTrafficDirection(direction) {
             currentTrafficDirection = direction;
@@ -10592,10 +10650,12 @@
                     '<span class="transit-service">'+MAV.service_legend[d.service]+'</span></div>';
             }).join('');
             const up = c.querySelector('.transit-item:not(.past)');
-            if (up) setTimeout(() => up.scrollIntoView({block:'start',behavior:'smooth'}), 100);
+            if (up) setTimeout(() => c.scrollTop = up.offsetTop - c.offsetTop, 100);
             document.getElementById('mav-ts').textContent = t;
+            const fts = document.getElementById('mav-footer-ts');
+            if (fts) fts.textContent = t;
         }
-        
+
         function renderVolan() {
             const c = document.getElementById('volan-list');
             const stopSel = document.getElementById('sel-stop');
@@ -10641,10 +10701,26 @@
                     '<span class="transit-service">'+(VOLAN.service_legend[d.service]||d.service)+'</span></div>';
             }).join('');
             const up = c.querySelector('.transit-item:not(.past)');
-            if (up) setTimeout(() => up.scrollIntoView({block:'start',behavior:'smooth'}), 100);
+            if (up) setTimeout(() => c.scrollTop = up.offsetTop - c.offsetTop, 100);
             document.getElementById('volan-ts').textContent = t;
+            const fts = document.getElementById('volan-footer-ts');
+            if (fts) fts.textContent = t;
         }
-        
+
+        function refreshMav() {
+            const btn = document.querySelector('#mav-tile .footer-icon-btn');
+            if (btn) btn.classList.add('spinning');
+            renderMav();
+            if (btn) setTimeout(() => btn.classList.remove('spinning'), 600);
+        }
+
+        function refreshVolan() {
+            const btn = document.querySelector('#volan-tile .footer-icon-btn');
+            if (btn) btn.classList.add('spinning');
+            renderVolan();
+            if (btn) setTimeout(() => btn.classList.remove('spinning'), 600);
+        }
+
         function initTransit() {
             const ss = document.getElementById('sel-stop');
             const sd = document.getElementById('sel-dir');
