@@ -1,7 +1,8 @@
 // TomTom Routing Worker
 // Proxies TomTom Routing API requests, injecting the API key server-side
 //
-// Usage: ?start=47.3175,18.9145&end=47.4979,19.0402
+// Usage: ?start=47.3175,18.9145&end=47.4979,19.0402&mode=car
+// Modes: car, bicycle, pedestrian (default: car)
 // Returns: { travelTimeInSeconds, lengthInMeters, trafficDelayInSeconds }
 
 const CORS_HEADERS = {
@@ -19,6 +20,7 @@ export default {
     const url = new URL(request.url);
     const start = url.searchParams.get('start');
     const end = url.searchParams.get('end');
+    const mode = url.searchParams.get('mode') || 'car'; // car, bicycle, pedestrian
 
     if (!start || !end) {
       return new Response(
@@ -36,8 +38,10 @@ export default {
     }
 
     // TomTom Routing API format: start_lat,start_lng:end_lat,end_lng
+    const validModes = ['car', 'bicycle', 'pedestrian'];
+    const travelMode = validModes.includes(mode) ? mode : 'car';
     const routeCoords = `${start}:${end}`;
-    const tomtomUrl = `https://api.tomtom.com/routing/1/calculateRoute/${routeCoords}/json?key=${apiKey}&traffic=true&travelMode=car`;
+    const tomtomUrl = `https://api.tomtom.com/routing/1/calculateRoute/${routeCoords}/json?key=${apiKey}&traffic=true&travelMode=${travelMode}`;
 
     try {
       const response = await fetch(tomtomUrl, {

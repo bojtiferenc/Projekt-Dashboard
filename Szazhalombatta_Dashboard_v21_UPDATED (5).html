@@ -9311,23 +9311,26 @@
                 // TomTom mode mapping
                 const modeMap = {
                     'driving': 'car',
-                    'transit': 'car', // TomTom nem támogat tömegközlekedést, autóval számolunk
+                    'transit': 'car', // TomTom nem támogat tömegközlekedést, autó alapú becslés
                     'bicycling': 'bicycle',
                     'walking': 'pedestrian'
                 };
+                // Transit módnál 1.4x szorzó (megállók, várakozás)
+                const transitMultiplier = (mode === 'transit') ? 1.4 : 1;
                 
                 const tomtomMode = modeMap[mode] || 'car';
-                const url = `${TOMTOM_ROUTING_URL}?start=${fromLat},${fromLng}&end=${toLat},${toLng}`;
+                const url = `${TOMTOM_ROUTING_URL}?start=${fromLat},${fromLng}&end=${toLat},${toLng}&mode=${tomtomMode}`;
                 
                 const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.travelTimeInSeconds) {
-                    const durationMin = Math.round(data.travelTimeInSeconds / 60);
+                    const adjustedSeconds = Math.round(data.travelTimeInSeconds * transitMultiplier);
+                    const durationMin = Math.round(adjustedSeconds / 60);
                     const distanceKm = (data.lengthInMeters / 1000).toFixed(1);
                     return {
                         duration: durationMin,
-                        durationSeconds: data.travelTimeInSeconds,
+                        durationSeconds: adjustedSeconds,
                         distance: distanceKm,
                         trafficDelay: data.trafficDelayInSeconds || 0
                     };
