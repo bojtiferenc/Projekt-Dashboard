@@ -1,7 +1,7 @@
 // TomTom Traffic Flow Worker
 // Proxies TomTom Traffic Flow API requests, injecting the API key server-side
 //
-// Usage: ?lat=47.3089&lon=18.9156&zoom=10
+// Usage: ?point=47.3089,18.9156  OR  ?lat=47.3089&lon=18.9156
 // Returns: TomTom flowSegmentData response
 
 const CORS_HEADERS = {
@@ -17,13 +17,21 @@ export default {
     }
 
     const url = new URL(request.url);
-    const lat = url.searchParams.get('lat');
-    const lon = url.searchParams.get('lon');
     const zoom = url.searchParams.get('zoom') || '10';
+
+    // Support both ?point=lat,lon and ?lat=...&lon=... formats
+    let lat = url.searchParams.get('lat');
+    let lon = url.searchParams.get('lon');
+    const point = url.searchParams.get('point');
+    if (point && point.includes(',')) {
+      const parts = point.split(',');
+      lat = lat || parts[0];
+      lon = lon || parts[1];
+    }
 
     if (!lat || !lon) {
       return new Response(
-        JSON.stringify({ error: 'Missing lat/lon parameters' }),
+        JSON.stringify({ error: 'Missing point parameter (format: lat,lon)' }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
       );
     }

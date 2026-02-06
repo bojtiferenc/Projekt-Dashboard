@@ -9183,7 +9183,7 @@
 
             try {
                 const response = await fetch(
-                    `${TOMTOM_WORKER_URL}?lat=${coords.lat}&lon=${coords.lon}`
+                    `${TOMTOM_WORKER_URL}?point=${coords.lat},${coords.lon}`
                 );
 
                 if (!response.ok) {
