@@ -1473,6 +1473,7 @@
             flex-wrap: wrap;
             gap: 16px;
             padding-top: 16px;
+            align-items: flex-start;
         }
         .pinned-tiles-container:empty {
             display: none;
@@ -1480,6 +1481,12 @@
         .pinned-tile-wrapper {
             position: relative;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .pinned-tile-wrapper > * {
+            flex: 1;
+            min-height: 0;
         }
         
         .news-ticker {
@@ -7225,6 +7232,8 @@
         
         // ============================================
         // PIN / KITŰZÉS RENDSZER
+        // Az eredeti DOM elemeket mozgatjuk az oldalak
+        // között, így a teljes működés megmarad.
         // ============================================
 
         function getPinnedTiles() {
@@ -7241,114 +7250,115 @@
             const isPinned = pinned.includes(tileId);
 
             if (isPinned) {
-                // Levétel
                 pinned = pinned.filter(id => id !== tileId);
                 btn.classList.remove('pinned');
                 btn.title = 'Kitűzés';
-                removePinnedTile(tileId);
             } else {
-                // Kitűzés
                 pinned.push(tileId);
                 btn.classList.add('pinned');
                 btn.title = 'Kitűzés eltávolítása';
-                addPinnedTile(tileId);
             }
             savePinnedTiles(pinned);
+
+            // Ha épp az áttekintés oldalon vagyunk, azonnal frissítjük
+            if (document.querySelector('.page-overview.active')) {
+                movePinnedTilesToOverview();
+            }
         }
 
-        // Klónozott csempe hozzáadása az áttekintés oldalhoz
-        function addPinnedTile(tileId) {
+        // Kitűzött csempék áthelyezése az áttekintés oldalra
+        function movePinnedTilesToOverview() {
             const container = document.getElementById('pinned-tiles-container');
             if (!container) return;
-            // Ne duplikáljuk
-            if (container.querySelector('[data-pinned-id="' + tileId + '"]')) return;
+            const pinned = getPinnedTiles();
 
-            const source = document.querySelector('[data-tile-id="' + tileId + '"]');
-            if (!source) return;
+            pinned.forEach(tileId => {
+                const tile = document.querySelector('[data-tile-id="' + tileId + '"]');
+                if (!tile) return;
+                // Már ott van?
+                if (tile.parentNode.closest('#pinned-tiles-container')) return;
 
-            // Eredeti méret rögzítése klónozás előtt
-            const sourceWidth = source.offsetWidth;
-            const sourceHeight = source.offsetHeight;
+                // Méret rögzítése
+                const w = tile.offsetWidth;
+                const h = tile.offsetHeight;
 
-            const clone = source.cloneNode(true);
+                // Placeholder beszúrása az eredeti helyére
+                const placeholder = document.createElement('div');
+                placeholder.dataset.placeholderFor = tileId;
+                placeholder.style.display = 'none';
+                tile.parentNode.insertBefore(placeholder, tile);
 
-            // Eredeti méret alkalmazása a klónra
-            if (sourceWidth > 0) {
-                clone.style.width = sourceWidth + 'px';
-            }
-            if (sourceHeight > 0) {
-                clone.style.minHeight = sourceHeight + 'px';
-            }
+                // Wrapper + méret
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pinned-tile-wrapper';
+                wrapper.dataset.pinnedId = tileId;
+                if (w > 0) wrapper.style.width = w + 'px';
+                if (h > 0) wrapper.style.minHeight = h + 'px';
 
-            // Wrapper
-            const wrapper = document.createElement('div');
-            wrapper.className = 'pinned-tile-wrapper';
-            wrapper.dataset.pinnedId = tileId;
-
-            // Duplikált ID-k eltávolítása a klónból
-            clone.querySelectorAll('[id]').forEach(el => {
-                el.id = 'pinned-' + el.id;
+                wrapper.appendChild(tile);
+                container.appendChild(wrapper);
             });
-            clone.removeAttribute('id');
-            clone.removeAttribute('data-tile-id');
 
-            // A klónon a pin gombot cseréljük: kattintásra leveszi az áttekintésről
-            const pinBtn = clone.querySelector('.tile-pin-btn');
-            if (pinBtn) {
-                pinBtn.className = 'tile-pin-btn pinned';
-                pinBtn.title = 'Eltávolítás az áttekintésről';
-                pinBtn.setAttribute('onclick', 'unpinFromOverview(\"' + tileId + '\")');
-            }
-
-            wrapper.appendChild(clone);
-            container.appendChild(wrapper);
+            // Nem kitűzött csempéket visszarakjuk, ha korábban ott voltak
+            container.querySelectorAll('.pinned-tile-wrapper').forEach(wrapper => {
+                const tid = wrapper.dataset.pinnedId;
+                if (!pinned.includes(tid)) {
+                    returnTileToSource(tid);
+                }
+            });
         }
 
-        // Csempe eltávolítása az áttekintés oldalról
-        function removePinnedTile(tileId) {
-            const container = document.getElementById('pinned-tiles-container');
-            if (!container) return;
-            const wrapper = container.querySelector('[data-pinned-id="' + tileId + '"]');
+        // Csempe visszahelyezése az eredeti helyére
+        function returnTileToSource(tileId) {
+            const placeholder = document.querySelector('[data-placeholder-for="' + tileId + '"]');
+            const tile = document.querySelector('[data-tile-id="' + tileId + '"]');
+            if (!placeholder || !tile) return;
+
+            // Inline méret eltávolítása
+            tile.style.width = '';
+            tile.style.minHeight = '';
+
+            placeholder.parentNode.insertBefore(tile, placeholder);
+            placeholder.remove();
+
+            // Wrapper törlése
+            const wrapper = document.querySelector('.pinned-tile-wrapper[data-pinned-id="' + tileId + '"]');
             if (wrapper) wrapper.remove();
         }
 
-        // Áttekintés oldalról való eltávolítás (a klón pin gombjáról hívva)
-        function unpinFromOverview(tileId) {
-            let pinned = getPinnedTiles();
-            pinned = pinned.filter(id => id !== tileId);
-            savePinnedTiles(pinned);
-            removePinnedTile(tileId);
-
-            // A forrás csempe pin gombját is frissítjük
-            const source = document.querySelector('[data-tile-id="' + tileId + '"]');
-            if (source) {
-                const btn = source.querySelector('.tile-pin-btn');
-                if (btn) {
-                    btn.classList.remove('pinned');
-                    btn.title = 'Kitűzés';
-                }
-            }
+        // Összes kitűzött csempe visszahelyezése (oldalváltáskor)
+        function returnAllPinnedTiles() {
+            const container = document.getElementById('pinned-tiles-container');
+            if (!container) return;
+            const wrappers = [...container.querySelectorAll('.pinned-tile-wrapper')];
+            wrappers.forEach(wrapper => {
+                returnTileToSource(wrapper.dataset.pinnedId);
+            });
         }
 
-        // Kitűzött csempék visszaállítása oldal betöltésekor
-        function restorePinnedTiles() {
+        // Pin gombok állapotának beállítása
+        function updatePinButtonStates() {
             const pinned = getPinnedTiles();
-            pinned.forEach(tileId => {
-                addPinnedTile(tileId);
-                // Forrás gomb állapot
-                const source = document.querySelector('[data-tile-id="' + tileId + '"]');
-                if (source) {
-                    const btn = source.querySelector('.tile-pin-btn');
-                    if (btn) {
-                        btn.classList.add('pinned');
-                        btn.title = 'Kitűzés eltávolítása';
-                    }
+            document.querySelectorAll('[data-tile-id]').forEach(tile => {
+                const btn = tile.querySelector('.tile-pin-btn');
+                if (!btn) return;
+                const tileId = tile.dataset.tileId;
+                if (pinned.includes(tileId)) {
+                    btn.classList.add('pinned');
+                    btn.title = 'Kitűzés eltávolítása';
+                } else {
+                    btn.classList.remove('pinned');
+                    btn.title = 'Kitűzés';
                 }
             });
         }
 
-        // Inicializálás
-        restorePinnedTiles();
+        // Inicializálás: pin gombok beállítása
+        updatePinButtonStates();
+        // Ha az áttekintés aktív induláskor, csempék áthelyezése
+        if (document.querySelector('.page-overview.active')) {
+            setTimeout(() => movePinnedTilesToOverview(), 100);
+        }
 
         // Térkép teljes képernyő
         function toggleMapFullscreen() {
@@ -7407,15 +7417,28 @@
                 // Hide all pages
                 pages.forEach(page => page.classList.remove('active'));
                 
+                // Kitűzött csempék visszahelyezése az eredeti oldalukra
+                returnAllPinnedTiles();
+
                 // Show target page
                 const targetPageElement = document.querySelector(`.page-${targetPage}`);
                 if (targetPageElement) {
                     targetPageElement.classList.add('active');
                 }
 
+                // Áttekintés: kitűzött csempék áthelyezése ide
+                if (targetPage === 'overview') {
+                    setTimeout(() => movePinnedTilesToOverview(), 50);
+                }
+
                 // Térkép oldal: invalidateSize szükséges a rejtett konténer miatt
                 if (targetPage === 'map' && typeof map !== 'undefined' && map) {
                     setTimeout(() => map.invalidateSize(), 200);
+                }
+
+                // Közlekedés: térkép invalidateSize
+                if (targetPage === 'mobility' && typeof mobilityMap !== 'undefined' && mobilityMap) {
+                    setTimeout(() => mobilityMap.invalidateSize(), 200);
                 }
             });
         });
