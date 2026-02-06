@@ -7609,11 +7609,17 @@
                 { lat: 47.3185, lng: 18.9155, name: 'E-töltő állomás', info: 'Elektromos töltőpont', details: 'Erkel Ferenc körút környéke' }
             ],
             parking: [
-                { lat: 47.3175, lng: 18.9145, name: 'Városközpont parkoló', info: '120 férőhely, Ingyenes', details: 'Szent István tér' },
-                { lat: 47.3225, lng: 18.9175, name: 'P+R Vasútállomás', info: '80 férőhely, Ingyenes', details: 'Vasútállomás mellett' },
-                { lat: 47.3130, lng: 18.9180, name: 'Strand parkoló', info: '200 férőhely, Fizetős', details: 'Battai strand' },
-                { lat: 47.3190, lng: 18.9100, name: 'Piac parkoló', info: '60 férőhely, Ingyenes', details: 'Piac tér' },
-                { lat: 47.3160, lng: 18.9210, name: 'ABC parkoló', info: '40 férőhely, Ingyenes', details: 'Dunafüred' }
+                { lat: 47.3186, lng: 18.9157, name: 'Szent István tér parkoló', info: '89 férőhely, Ingyenes', details: 'Szent István tér, Damjanich u. oldal' },
+                { lat: 47.3139, lng: 18.9143, name: 'Tesco parkoló', info: 'Nagy parkoló, Ingyenes', details: 'Damjanich utca 29.' },
+                { lat: 47.3222, lng: 18.9015, name: 'Városkapu Üzletház parkoló', info: '207 férőhely, Ingyenes', details: 'Vörösmarty Mihály utca 2/a' },
+                { lat: 47.3226, lng: 18.8993, name: 'P+R Vasútállomás', info: 'P+R parkoló, Ingyenes', details: 'Városkapu út 1.' },
+                { lat: 47.3175, lng: 18.9239, name: 'Strand parkoló', info: '200 férőhely, Ingyenes', details: 'Vasút utca 41., Sportcsarnok mellett' },
+                { lat: 47.3182, lng: 18.9095, name: 'Halom Üzletház parkoló', info: 'Ingyenes', details: 'Szent István tér 10.' },
+                { lat: 47.3145, lng: 18.9050, name: 'Piac tér parkoló', info: 'Ingyenes', details: 'Piac tér, SPAR Partner mellett' },
+                { lat: 47.3141, lng: 18.9101, name: 'Erkel Ferenc körút parkoló', info: 'Ingyenes', details: 'Erkel Ferenc körút' },
+                { lat: 47.3232, lng: 18.9023, name: 'SZISZKI parkoló', info: 'Ingyenes, 0-24', details: 'Iskola utca 3.' },
+                { lat: 47.3139, lng: 18.9143, name: 'CBA Príma parkoló', info: 'Ingyenes', details: 'Damjanich utca 23.' },
+                { lat: 47.3358, lng: 18.9392, name: 'Régészeti Park parkoló', info: 'Ingyenes', details: 'Poroszlai Ildikó út 1-2.' }
             ],
             bike: [
                 { lat: 47.3180, lng: 18.9140, name: 'Városháza kerékpártároló', info: 'Fedett', details: '20 férőhely' },
@@ -8529,7 +8535,7 @@
             updateMobilityCount('bus', mobilityLayers.bus.data.length);
             console.log(`bus: GTFS adatok használata (${mobilityLayers.bus.data.length} megálló)`);
             
-            // Parkolók: mindig a saját adatok (5 parkoló)
+            // Parkolók: mindig a saját adatok (11 parkoló)
             mobilityLayers.parking.data = mobilityFallbackData.parking || [];
             mobilityLayers.parking.source = 'local';
             updateMobilityCount('parking', mobilityLayers.parking.data.length);
