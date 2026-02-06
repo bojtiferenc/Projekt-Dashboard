@@ -8181,6 +8181,12 @@
         
         // OpenChargeMap API (E-töltők)
         async function fetchMobilityChargingStations(lat, lng, radius) {
+            // file:// origin-ről CORS blokkolja az API-t, ilyenkor fallback
+            if (location.protocol === 'file:') {
+                console.log('OpenChargeMap: file:// origin, fallback használata');
+                return [];
+            }
+
             const url = `https://api.openchargemap.io/v3/poi/?output=json&latitude=${lat}&longitude=${lng}&distance=${radius/1000}&distanceunit=KM&maxresults=50&compact=true&verbose=false`;
             
             try {
