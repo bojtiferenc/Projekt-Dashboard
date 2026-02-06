@@ -2446,6 +2446,82 @@
         .mobility-map-loading.hidden {
             display: none;
         }
+
+        /* Fullscreen térkép */
+        .mobility-map-tile.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10000;
+            border-radius: 0;
+            border: none;
+            background: var(--bg-primary, #0f0f23);
+        }
+        .mobility-map-tile.fullscreen .mobility-map-body {
+            flex: 1;
+            padding: 0;
+        }
+        .mobility-map-tile.fullscreen .map-inner-card {
+            border-radius: 0;
+            border: none;
+        }
+        .mobility-map-tile.fullscreen .mobility-map-legend {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            z-index: 1000;
+            background: rgba(15, 15, 35, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .mobility-map-tile.fullscreen .mobility-map-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(15, 15, 35, 0.85);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .fullscreen-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: rgba(255,255,255,0.08);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .fullscreen-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .fullscreen-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--text-muted);
+            fill: none;
+        }
+        .fullscreen-btn:hover svg {
+            stroke: var(--text-primary);
+        }
+        .fullscreen-btn .icon-minimize {
+            display: none;
+        }
+        .mobility-map-tile.fullscreen .fullscreen-btn .icon-maximize {
+            display: none;
+        }
+        .mobility-map-tile.fullscreen .fullscreen-btn .icon-minimize {
+            display: block;
+        }
         
         .mobility-loading-spinner {
             width: 40px;
@@ -6511,6 +6587,14 @@
                                     </svg>
                                     <span id="mobility-location-text">Helymeghatározás...</span>
                                 </div>
+                                <button class="fullscreen-btn" onclick="toggleMapFullscreen()" title="Teljes képernyő">
+                                    <svg class="icon-maximize" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                                    </svg>
+                                    <svg class="icon-minimize" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+                                        <path d="M4 14h6v6m10-10h-6V4m0 6l7-7M3 21l7-7"/>
+                                    </svg>
+                                </button>
                                 <button class="tile-pin-btn" onclick="toggleTilePin(this, 'mobility-map')" title="Kitűzés">
                                     <svg viewBox="0 0 24 24" stroke-width="2">
                                         <path d="M12 2L12 12"/>
@@ -7768,6 +7852,36 @@
             updatePinSettings(tileId, isPinned);
             syncSettingsPanel(tileId, isPinned);
         }
+
+        // Térkép teljes képernyő
+        function toggleMapFullscreen() {
+            const tile = document.querySelector('.mobility-map-tile');
+            if (!tile) return;
+            const isFullscreen = tile.classList.toggle('fullscreen');
+            document.body.style.overflow = isFullscreen ? 'hidden' : '';
+            // Leaflet-nek szüksége van invalidateSize-ra az új méret felismeréséhez
+            setTimeout(() => {
+                if (typeof mobilityMap !== 'undefined' && mobilityMap) {
+                    mobilityMap.invalidateSize();
+                }
+            }, 300);
+        }
+
+        // ESC billentyű: kilépés teljes képernyőből
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const tile = document.querySelector('.mobility-map-tile.fullscreen');
+                if (tile) {
+                    tile.classList.remove('fullscreen');
+                    document.body.style.overflow = '';
+                    setTimeout(() => {
+                        if (typeof mobilityMap !== 'undefined' && mobilityMap) {
+                            mobilityMap.invalidateSize();
+                        }
+                    }, 300);
+                }
+            }
+        });
 
         // Inicializálás
         initPinIcons();
