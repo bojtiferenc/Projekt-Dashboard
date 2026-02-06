@@ -9434,32 +9434,24 @@
             }
 
             try {
-                // Mindig autós módban kérjük (a worker jelenleg csak azt támogatja),
-                // a távolság alapján számoljuk a kerékpáros/gyalogos időt
-                const url = `${TOMTOM_ROUTING_URL}?start=${fromLat},${fromLng}&end=${toLat},${toLng}&mode=car`;
+                // TomTom mode mapping - a worker támogatja: car, bicycle, pedestrian
+                const modeMap = {
+                    'driving': 'car',
+                    'transit': 'car',
+                    'bicycling': 'bicycle',
+                    'walking': 'pedestrian'
+                };
+                const tomtomMode = modeMap[mode] || 'car';
+                const url = `${TOMTOM_ROUTING_URL}?start=${fromLat},${fromLng}&end=${toLat},${toLng}&mode=${tomtomMode}`;
 
                 const response = await fetch(url);
                 const data = await response.json();
 
-                if (data.travelTimeInSeconds && data.lengthInMeters) {
-                    const distanceKm = (data.lengthInMeters / 1000).toFixed(1);
-                    let travelSeconds;
-
-                    if (mode === 'bicycling') {
-                        // Kerékpár: átlag ~16 km/h városi tempó
-                        travelSeconds = Math.round(data.lengthInMeters / (16000 / 3600));
-                    } else if (mode === 'walking') {
-                        // Gyalog: átlag ~5 km/h
-                        travelSeconds = Math.round(data.lengthInMeters / (5000 / 3600));
-                    } else if (mode === 'transit') {
-                        // Transit fallback: autó × 1.4
-                        travelSeconds = Math.round(data.travelTimeInSeconds * 1.4);
-                    } else {
-                        // Autó: TomTom valós forgalmi adat
-                        travelSeconds = data.travelTimeInSeconds;
-                    }
-
+                if (data.travelTimeInSeconds) {
+                    const transitMultiplier = (mode === 'transit') ? 1.4 : 1;
+                    const travelSeconds = Math.round(data.travelTimeInSeconds * transitMultiplier);
                     const durationMin = Math.round(travelSeconds / 60);
+                    const distanceKm = (data.lengthInMeters / 1000).toFixed(1);
                     return {
                         duration: durationMin,
                         durationSeconds: travelSeconds,
