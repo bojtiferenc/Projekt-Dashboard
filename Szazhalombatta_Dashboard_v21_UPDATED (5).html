@@ -1469,8 +1469,8 @@
         }
 
         .pinned-tiles-container {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
             gap: 16px;
             padding-top: 16px;
         }
@@ -1479,6 +1479,30 @@
         }
         .pinned-tile-wrapper {
             position: relative;
+        }
+        /* Kitűzött csempék méretezése - eredeti elrendezésnek megfelelően */
+        .pinned-tile-wrapper .weather-tile {
+            grid-column: 1 / -1;
+        }
+        .pinned-tile-wrapper .mobility-map-tile {
+            min-height: 400px;
+        }
+        .pinned-tile-wrapper .news-tile,
+        .pinned-tile-wrapper .utinform-tile {
+            min-height: 260px;
+            max-height: 260px;
+        }
+        .pinned-tile-wrapper .transit-tile {
+            min-height: 300px;
+        }
+        /* Alapértelmezés: minden kitűzött csempe teljes szélességű */
+        .pinned-tiles-container > .pinned-tile-wrapper {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 900px) {
+            .pinned-tiles-container {
+                grid-template-columns: 1fr;
+            }
         }
         
         .news-ticker {
@@ -7265,7 +7289,16 @@
             const source = document.querySelector('[data-tile-id="' + tileId + '"]');
             if (!source) return;
 
+            // Eredeti méret rögzítése klónozás előtt
+            const sourceHeight = source.offsetHeight;
+
             const clone = source.cloneNode(true);
+
+            // Eredeti magasság alkalmazása a klónra
+            if (sourceHeight > 0) {
+                clone.style.minHeight = sourceHeight + 'px';
+            }
+
             // Wrapper
             const wrapper = document.createElement('div');
             wrapper.className = 'pinned-tile-wrapper';
