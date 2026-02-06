@@ -2456,6 +2456,10 @@
             animation: spin 1s linear infinite;
             margin-bottom: 12px;
         }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
         
         .mobility-map-footer {
             padding: 10px 16px;
@@ -4596,7 +4600,8 @@
             flex-shrink: 0;
         }
         
-        .refresh-btn.spinning svg {
+        .refresh-btn.spinning svg,
+        .footer-icon-btn.spinning svg {
             animation: spinIcon 0.8s linear infinite;
         }
         
@@ -7756,6 +7761,14 @@
             }
         }
         
+        // Tile pin gomb kezelés (mobility oldal csempéi)
+        function toggleTilePin(btn, tileId) {
+            const isPinned = btn.classList.toggle('pinned');
+            btn.title = isPinned ? 'Kitűzés eltávolítása' : 'Kitűzés';
+            updatePinSettings(tileId, isPinned);
+            syncSettingsPanel(tileId, isPinned);
+        }
+
         // Inicializálás
         initPinIcons();
         loadPinStates();
@@ -7965,7 +7978,6 @@
         // MOBILITY MAP - Google Maps + API integráció
         // ============================================
         let mobilityMap;
-        let mobilityTrafficLayer;
         let mobilityCurrentLocation = { lat: 47.3175, lng: 18.9145 }; // Százhalombatta
         const MOBILITY_SEARCH_RADIUS = 3000; // 3 km - város határain belül
         let mobilityMapInitialized = false;
@@ -9718,7 +9730,7 @@
             
             // Loading jelzés
             const container = document.getElementById('travel-time-list');
-            const refreshBtn = document.querySelector('.refresh-btn');
+            const refreshBtn = container?.closest('.travel-time-tile')?.querySelector('.footer-icon-btn');
             if (refreshBtn) {
                 refreshBtn.classList.add('spinning');
             }
@@ -9810,8 +9822,9 @@
                 // Távolság megjelenítése ha van
                 const distanceText = dest.distance ? `${dest.distance} km` : dest.address;
                 
+                const safeName = (dest.name || '').replace(/'/g, "\\'").replace(/</g, '&lt;');
                 html += `
-                    <div class="destination-card" onclick="showRouteOnMap(${dest.lat}, ${dest.lng}, '${dest.name}')">
+                    <div class="destination-card" onclick="showRouteOnMap(${dest.lat}, ${dest.lng}, '${safeName}')">
                         <div class="destination-info">
                             <div class="destination-name">${dest.name}</div>
                             <div class="destination-address">${distanceText}</div>
@@ -10157,9 +10170,10 @@
                 const icon = item.type === 'construction' ? '⚠️' : '🔧';
                 const iconClass = item.type === 'construction' ? 'construction' : 'maintenance';
                 const dateStr = formatNewsDate(item.startDate, item.endDate);
-                
+                const safeTitle = (item.title || '').replace(/'/g, "\\'").replace(/</g, '&lt;');
+
                 return `
-                    <div class="news-item" onclick="focusNewsOnMap(${item.lat}, ${item.lng}, '${item.title}')">
+                    <div class="news-item" onclick="focusNewsOnMap(${item.lat}, ${item.lng}, '${safeTitle}')">
                         <div class="news-item-icon ${iconClass}">${icon}</div>
                         <div class="news-item-content">
                             <div class="news-item-header">
